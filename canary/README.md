@@ -1,6 +1,21 @@
 
 
 
+## Running the Pipeline
+
+```bash
+kubectl apply -f kaniko/kaniko.yaml
+kubectl apply -f canary/pipeline.yaml
+
+# Change resources first
+kubectl apply -f canary/resources.yaml
+
+# Make new runs with cli
+tkn pipeline start canary-pipeline -r source-repo=catservice -r image=christie-catservice-image
+```
+
+
+
 ## Creating a GKE cluster with Istio & Prometheus
 
 ```bash

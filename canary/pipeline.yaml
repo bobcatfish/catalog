@@ -1,0 +1,21 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: canary-pipeline
+spec:
+  resources:
+  - name: source-repo
+    type: git
+  - name: image
+    type: image
+  tasks:
+  - name: build-image
+    taskRef:
+      name: kaniko
+    resources:
+      inputs:
+      - name: source
+        resource: source-repo
+      outputs:
+      - name: image
+        resource: image
