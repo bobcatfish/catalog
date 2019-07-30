@@ -6,6 +6,7 @@
 ```bash
 # TODO: better way to support pipeline level tags + kaniko building
 kubectl apply -f canary/kaniko-tag.yaml
+kubectl apply -f canary/canary-deployment.yaml
 kubectl apply -f canary/pipeline.yaml
 
 # Change resources first

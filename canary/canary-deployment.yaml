@@ -1,0 +1,115 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: canary-deployment
+spec:
+  inputs:
+    params:
+    - name: pathToDeployment
+      description: Path to yaml file of the Deployment to canary (can be relative to the path to the repo).
+    - name: pathToHPA
+      description: Path to yaml file of the HPA that scales the Deployment to canary (can be relative to the path to the repo).
+    - name: tag
+      description: Tag of the image to use for the canary.
+    resources:
+    - name: source
+      type: git
+    - name: image
+      type: image
+
+  steps:
+  - name: create-yq-deployment-script
+    image: mikefarah/yq
+    workingDir: "${inputs.resources.source.path}"
+    command:
+    - /bin/sh
+    args:
+    - -ce
+    - |
+      set -e
+      set -x
+      export YQ_CONFIG="/builder/home/yq-deployment-config.yaml"
+      export NAME="$(yq read ${inputs.params.pathToDeployment} metadata.name)-canary"
+      export APP="$(yq read ${inputs.params.pathToDeployment} metadata.labels.app)-canary"
+      export MATCH_LABELS_APP="$(yq read ${inputs.params.pathToDeployment} spec.selector.matchLabels.app)-canary"
+      export TEMPLATE_LABELS="$(yq read ${inputs.params.pathToDeployment} spec.template.metadata.labels.app)-canary"
+
+      cat <<EOF > $YQ_CONFIG
+      metadata.name: $NAME
+      metadata.labels.app: $APP
+      spec.selector.matchLabels.app: $MATCH_LABELS_APP
+      spec.template.metadata.labels.app: $TEMPLATE_LABELS
+      spec.template.spec.containers[0].image: ${inputs.resources.image.url}:${inputs.params.tag}
+      EOF
+
+      cat $YQ_CONFIG
+
+  - name: create-canary-deployment-config
+    image: mikefarah/yq
+    workingDir: "${inputs.resources.source.path}"
+    command: ['yq']
+    args:
+    - w
+    - -i
+    - -s
+    - /builder/home/yq-deployment-config.yaml
+    - ${inputs.params.pathToDeployment}
+
+  - name: cat-deployment
+    image: mikefarah/yq
+    workingDir: "${inputs.resources.source.path}"
+    command: ['cat']
+    args:
+    - ${inputs.params.pathToDeployment}
+
+  - name: create-yq-hpa-script
+    image: mikefarah/yq
+    workingDir: "${inputs.resources.source.path}"
+    command:
+    - /bin/sh
+    args:
+    - -ce
+    - |
+      set -e
+      set -x
+      export YQ_CONFIG="/builder/home/yq-hpa-config.yaml"
+      export NAME="$(yq read ${inputs.params.pathToHPA} metadata.name)-canary"
+      export SCALE_TARGET="$(yq read ${inputs.params.pathToHPA} spec.scaleTargetRef.name)-canary"
+
+      cat <<EOF > $YQ_CONFIG
+      metadata.name: $NAME
+      spec.scaleTargetRef.name: $SCALE_TARGET
+      EOF
+
+      cat $YQ_CONFIG
+
+  - name: create-canary-hpa-config
+    image: mikefarah/yq
+    workingDir: "${inputs.resources.source.path}"
+    command: ['yq']
+    args:
+    - w
+    - -i
+    - -s
+    - /builder/home/yq-hpa-config.yaml
+    - ${inputs.params.pathToHPA}
+
+  - name: cat-hpa
+    image: mikefarah/yq
+    workingDir: "${inputs.resources.source.path}"
+    command: ['cat']
+    args:
+    - ${inputs.params.pathToHPA}
+  
+  - name: apply-canaries
+    image: lachlanevenson/k8s-kubectl
+
+    # TODO: set workdir with stepTemplate
+    workingDir: "${inputs.resources.source.path}"
+    command: ['kubectl']
+    args:
+    - 'apply'
+    - '-f'
+    - ${inputs.params.pathToHPA}
+    - '-f'
+    - ${inputs.params.pathToDeployment}
