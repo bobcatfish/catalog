@@ -3,6 +3,9 @@ kind: Pipeline
 metadata:
   name: canary-pipeline
 spec:
+  params:
+  - name: tag
+    description: Tag to use for newly built image
   resources:
   - name: source-repo
     type: git
@@ -11,7 +14,10 @@ spec:
   tasks:
   - name: build-image
     taskRef:
-      name: kaniko
+      name: kaniko-tag
+    params:
+    - name: TAG
+      value: ${params.tag}
     resources:
       inputs:
       - name: source

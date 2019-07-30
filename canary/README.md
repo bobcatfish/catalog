@@ -4,7 +4,8 @@
 ## Running the Pipeline
 
 ```bash
-kubectl apply -f kaniko/kaniko.yaml
+# TODO: better way to support pipeline level tags + kaniko building
+kubectl apply -f canary/kaniko-tag.yaml
 kubectl apply -f canary/pipeline.yaml
 
 # Change resources first
