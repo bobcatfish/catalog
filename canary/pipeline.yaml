@@ -85,7 +85,7 @@ spec:
       - name: cluster
         resource: cluster
   - name: scale-canary-50
-    runAfter: [scale-canary-70]
+    runAfter: [scale-canary-75]
     taskRef:
       name: scale
     params:
@@ -95,6 +95,43 @@ spec:
       value: "50"
     - name: pathToVirtualService
       value: "config/600-virtualservice.yaml"
+    resources:
+      inputs:
+      - name: source
+        resource: source-repo
+      - name: cluster
+        resource: cluster
+  - name: update-original-deployment
+    runAfter: [scale-canary-50]
+    taskRef:
+      name: update-image
+    params:
+    - name: pathToDeployment
+      value: "config/200-deployment.yaml"
+    - name: tag
+      value: ${params.tag}
+    resources:
+      inputs:
+      - name: source
+        resource: source-repo
+      - name: cluster
+        resource: cluster
+      - name: image
+        resource: image
+        from: [build-image]
+  - name: remove-canary
+    runAfter: [update-original-deployment]
+    taskRef:
+      name: remove-canary-deployment
+    params:
+    - name: pathToDeployment
+      value: "config/200-deployment.yaml"
+    - name: pathToHPA
+      value: "config/300-hpa.yaml"
+    - name: pathToVirtualService
+      value: "config/600-virtualservice.yaml"
+    - name: pathToDestinationRule
+      value: "config/700-destinationrule.yaml"
     resources:
       inputs:
       - name: source
