@@ -1,5 +1,7 @@
+This is a POC of a canary deployment with Tekton!
 
-
+[The pipeline](pipeline.yaml) is heavily coupled to
+[bobcatfish's beautiful catservice](https://github.com/bobcatfish/catservice/tree/makin_the_cat_service).
 
 ## Running the Pipeline
 
@@ -12,8 +14,7 @@ kubectl apply -f canary/update-image.yaml
 kubectl apply -f canary/remove-canary-deployment.yaml
 kubectl apply -f canary/pipeline.yaml
 
-# TODO: make docs about how to set up resources
-# Change resources
+# TODO: make docs about how to set up resources - doesnt include example cluster
 # To get credentials for the target cluster:
 # kubectl get serviceaccounts robot -o yaml -n catspace
 # kubectl get secret robot-token-zgf2d -o yaml -n catspace
