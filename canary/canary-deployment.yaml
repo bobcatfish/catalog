@@ -9,6 +9,8 @@ spec:
       description: Path to yaml file of the Deployment to canary (can be relative to the path to the repo).
     - name: pathToHPA
       description: Path to yaml file of the HPA that scales the Deployment to canary (can be relative to the path to the repo).
+    - name: pathToService
+      description: Path to yaml file of the service that routes to the Deployment to canary (can be relative to the path to the repo).
     - name: tag
       description: Tag of the image to use for the canary.
     resources:
@@ -103,12 +105,46 @@ spec:
     args:
     - ${inputs.params.pathToHPA}
 
-  - name: cat-kubeconfig
-    image: busybox
+  - name: create-yq-service-script
+    image: mikefarah/yq
+    workingDir: "${inputs.resources.source.path}"
+    command:
+    - /bin/sh
+    args:
+    - -ce
+    - |
+      set -e
+      set -x
+      export YQ_CONFIG="/builder/home/yq-service-config.yaml"
+      export NAME="$(yq read ${inputs.params.pathToService} metadata.name)-canary"
+      export APP="$(yq read ${inputs.params.pathToDeployment} metadata.labels.app)-canary"
+      export SELECTOR_APP="$(yq read ${inputs.params.pathToDeployment} spec.selector.app)-canary"
+
+      cat <<EOF > $YQ_CONFIG
+      metadata.name: $NAME
+      metadata.labels.app: $APP
+      spec.selector.app: $SELECTOR_APP
+      EOF
+
+      cat $YQ_CONFIG
+
+  - name: create-canary-service-config
+    image: mikefarah/yq
+    workingDir: "${inputs.resources.source.path}"
+    command: ['yq']
+    args:
+    - w
+    - -i
+    - -s
+    - /builder/home/yq-service-config.yaml
+    - ${inputs.params.pathToService}
+
+  - name: cat-service
+    image: mikefarah/yq
     workingDir: "${inputs.resources.source.path}"
     command: ['cat']
     args:
-    - '/workspace/${inputs.resources.cluster.name}/kubeconfig'
+    - ${inputs.params.pathToService}
 
   - name: apply-canaries
     image: lachlanevenson/k8s-kubectl
@@ -119,6 +155,8 @@ spec:
     - '--kubeconfig'
     - '/workspace/${inputs.resources.cluster.name}/kubeconfig'
     - '-f'
+    - ${inputs.params.pathToDeployment}
+    - '-f'
     - ${inputs.params.pathToHPA}
     - '-f'
-    - ${inputs.params.pathToDeployment}
+    - ${inputs.params.pathToService}
