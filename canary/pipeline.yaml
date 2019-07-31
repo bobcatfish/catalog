@@ -67,49 +67,15 @@ spec:
         resource: source-repo
       - name: cluster
         resource: cluster
-  - name: scale-canary-80
+  - name: scale-canary-75
     runAfter: [scale-canary-90]
     taskRef:
       name: scale
     params:
     - name: baselinePercent
-      value: "80"
+      value: "75"
     - name: canaryPercent
-      value: "20"
-    - name: pathToVirtualService
-      value: "config/600-virtualservice.yaml"
-    resources:
-      inputs:
-      - name: source
-        resource: source-repo
-      - name: cluster
-        resource: cluster
-  - name: scale-canary-70
-    runAfter: [scale-canary-80]
-    taskRef:
-      name: scale
-    params:
-    - name: baselinePercent
-      value: "70"
-    - name: canaryPercent
-      value: "30"
-    - name: pathToVirtualService
-      value: "config/600-virtualservice.yaml"
-    resources:
-      inputs:
-      - name: source
-        resource: source-repo
-      - name: cluster
-        resource: cluster
-  - name: scale-canary-60
-    runAfter: [scale-canary-70]
-    taskRef:
-      name: scale
-    params:
-    - name: baselinePercent
-      value: "60"
-    - name: canaryPercent
-      value: "40"
+      value: "25"
     - name: pathToVirtualService
       value: "config/600-virtualservice.yaml"
     resources:
@@ -119,7 +85,7 @@ spec:
       - name: cluster
         resource: cluster
   - name: scale-canary-50
-    runAfter: [scale-canary-60]
+    runAfter: [scale-canary-70]
     taskRef:
       name: scale
     params:
