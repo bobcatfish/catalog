@@ -16,6 +16,8 @@ spec:
       type: git
     - name: image
       type: image
+    - name: cluster
+      type: cluster
 
   steps:
   - name: create-yq-deployment-script
@@ -100,15 +102,22 @@ spec:
     command: ['cat']
     args:
     - ${inputs.params.pathToHPA}
-  
+
+  - name: cat-kubeconfig
+    image: busybox
+    workingDir: "${inputs.resources.source.path}"
+    command: ['cat']
+    args:
+    - '/workspace/${inputs.resources.cluster.name}/kubeconfig'
+
   - name: apply-canaries
     image: lachlanevenson/k8s-kubectl
-
-    # TODO: set workdir with stepTemplate
     workingDir: "${inputs.resources.source.path}"
     command: ['kubectl']
     args:
     - 'apply'
+    - '--kubeconfig'
+    - '/workspace/${inputs.resources.cluster.name}/kubeconfig'
     - '-f'
     - ${inputs.params.pathToHPA}
     - '-f'

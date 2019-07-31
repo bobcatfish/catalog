@@ -9,11 +9,16 @@ kubectl apply -f canary/kaniko-tag.yaml
 kubectl apply -f canary/canary-deployment.yaml
 kubectl apply -f canary/pipeline.yaml
 
-# Change resources first
+# TODO: make docs about how to set up resources
+# Change resources
+# To get credentials for the target cluster:
+# kubectl get serviceaccounts robot -o yaml -n catspace
+# kubectl get secret robot-token-zgf2d -o yaml -n catspace
+# Then base64 decode the token!!!!
 kubectl apply -f canary/resources.yaml
 
 # Make new runs with cli
-tkn pipeline start canary-pipeline -r source-repo=catservice -r image=christie-catservice-image
+tkn pipeline start canary-pipeline -r source-repo=catservice -r image=christie-catservice-image -r cluster=catservice-cluster
 ```
 
 
