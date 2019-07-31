@@ -7,6 +7,7 @@
 # TODO: better way to support pipeline level tags + kaniko building
 kubectl apply -f canary/kaniko-tag.yaml
 kubectl apply -f canary/canary-deployment.yaml
+kubectl apply -f canary/scale.yaml
 kubectl apply -f canary/pipeline.yaml
 
 # TODO: make docs about how to set up resources
@@ -18,7 +19,7 @@ kubectl apply -f canary/pipeline.yaml
 kubectl apply -f canary/resources.yaml
 
 # Make new runs with cli
-tkn pipeline start canary-pipeline -r source-repo=catservice -r image=christie-catservice-image -r cluster=catservice-cluster
+tkn pipeline start canary-pipeline -r source-repo=catservice -r image=christie-catservice-image -r cluster=catservice-cluster -p tag=0.0.4
 ```
 
 

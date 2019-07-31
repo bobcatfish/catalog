@@ -11,6 +11,8 @@ spec:
     type: git
   - name: image
     type: image
+  - name: cluster
+    type: cluster
   tasks:
   - name: build-image
     taskRef:
@@ -37,12 +39,99 @@ spec:
       value: "config/600-virtualservice.yaml"
     - name: pathToDestinationRule
       value: "config/700-destinationrule.yaml"
-    - name: TAG
+    - name: tag
       value: ${params.tag}
     resources:
       inputs:
       - name: source
         resource: source-repo
+      - name: cluster
+        resource: cluster
       - name: image
         resource: image
         from: [build-image]
+  - name: scale-canary-90
+    runAfter: [create-canary]
+    taskRef:
+      name: scale
+    params:
+    - name: baselinePercent
+      value: "90"
+    - name: canaryPercent
+      value: "10"
+    - name: pathToVirtualService
+      value: "config/600-virtualservice.yaml"
+    resources:
+      inputs:
+      - name: source
+        resource: source-repo
+      - name: cluster
+        resource: cluster
+  - name: scale-canary-80
+    runAfter: [scale-canary-90]
+    taskRef:
+      name: scale
+    params:
+    - name: baselinePercent
+      value: "80"
+    - name: canaryPercent
+      value: "20"
+    - name: pathToVirtualService
+      value: "config/600-virtualservice.yaml"
+    resources:
+      inputs:
+      - name: source
+        resource: source-repo
+      - name: cluster
+        resource: cluster
+  - name: scale-canary-70
+    runAfter: [scale-canary-80]
+    taskRef:
+      name: scale
+    params:
+    - name: baselinePercent
+      value: "70"
+    - name: canaryPercent
+      value: "30"
+    - name: pathToVirtualService
+      value: "config/600-virtualservice.yaml"
+    resources:
+      inputs:
+      - name: source
+        resource: source-repo
+      - name: cluster
+        resource: cluster
+  - name: scale-canary-60
+    runAfter: [scale-canary-70]
+    taskRef:
+      name: scale
+    params:
+    - name: baselinePercent
+      value: "60"
+    - name: canaryPercent
+      value: "40"
+    - name: pathToVirtualService
+      value: "config/600-virtualservice.yaml"
+    resources:
+      inputs:
+      - name: source
+        resource: source-repo
+      - name: cluster
+        resource: cluster
+  - name: scale-canary-50
+    runAfter: [scale-canary-60]
+    taskRef:
+      name: scale
+    params:
+    - name: baselinePercent
+      value: "50"
+    - name: canaryPercent
+      value: "50"
+    - name: pathToVirtualService
+      value: "config/600-virtualservice.yaml"
+    resources:
+      inputs:
+      - name: source
+        resource: source-repo
+      - name: cluster
+        resource: cluster
