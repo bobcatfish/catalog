@@ -33,6 +33,10 @@ spec:
       value: "config/200-deployment.yaml"
     - name: pathToHPA
       value: "config/300-hpa.yaml"
+    - name: pathToVirtualService
+      value: "config/600-virtualservice.yaml"
+    - name: pathToDestinationRule
+      value: "config/700-destinationrule.yaml"
     - name: TAG
       value: ${params.tag}
     resources:
