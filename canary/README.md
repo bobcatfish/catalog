@@ -7,19 +7,19 @@ This is a POC of a canary deployment with Tekton!
 
 ```bash
 # TODO: better way to support pipeline level tags + kaniko building
-kubectl apply -f canary/kaniko-tag.yaml
-kubectl apply -f canary/canary-deployment.yaml
-kubectl apply -f canary/scale.yaml
-kubectl apply -f canary/update-image.yaml
-kubectl apply -f canary/remove-canary-deployment.yaml
-kubectl apply -f canary/pipeline.yaml
+kubectl apply -f canary/tekton/kaniko-tag.yaml
+kubectl apply -f canary/tekton/canary-deployment.yaml
+kubectl apply -f canary/tekton/scale.yaml
+kubectl apply -f canary/tekton/update-image.yaml
+kubectl apply -f canary/tekton/remove-canary-deployment.yaml
+kubectl apply -f canary/tekton/pipeline.yaml
 
 # TODO: make docs about how to set up resources - doesnt include example cluster
 # To get credentials for the target cluster:
 # kubectl get serviceaccounts robot -o yaml -n catspace
 # kubectl get secret robot-token-zgf2d -o yaml -n catspace
 # Then base64 decode the token!!!!
-kubectl apply -f canary/resources.yaml
+kubectl apply -f canary/tekton/resources.yaml
 
 # Make new runs with cli
 tkn pipeline start canary-pipeline -r source-repo=catservice -r image=christie-catservice-image -r cluster=catservice-cluster -p tag=0.0.9
