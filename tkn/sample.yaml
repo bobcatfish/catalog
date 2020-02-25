@@ -1,0 +1,72 @@
+apiVersion: tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  generate-name: tkn-sample-pipeline-template-
+spec:
+  params:
+  - name: pvc-workspace
+    description: The name of the pvc provided by the test framework
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1alpha1
+    kind: PipelineRun
+    metadata:
+      generateName: tkn-sample-pipeline-run-
+    spec:
+      pipelineSpec:
+        workspaces:
+          - name: pvc-workspace
+            persistentVolumeClaim:
+              claimName: $(params.pvc-workspace)
+        tasks:
+          # This inline Task sets up the environment for the sample to run the catalog Task
+          - name: setup-sample
+            workspaces:
+              - name: input-files
+                workspace: pvc-workspace
+            taskSpec:
+              workspaces:
+                - name: input-files
+              steps:
+                - name: echo
+                  image: ubuntu
+                  script: |
+                    #!/usr/bin/env bash
+
+                    # TODO: realistically this Task would need to also install Tekton Pipelines
+                    # in order to be able to run `tkn`
+
+                    # Imagine there was an example Task committed in the repo
+                    # (This is very meta since we're using a Task to apply a Task XD)
+                    git clone git@github.com:tektoncd/catalog.git
+                    cp catalog/tasks/tkn/sample/example.yaml $(workspaces.input-files.path)/
+
+          # This Task runs the catalog Task
+          - name: sample
+            taskRef: tkn
+            params:
+              - name: ARGS
+                # TODO: we'd also need to provide a kubeconfig for the cluster this can be applied to
+                value: ['task', 'start', '--filename', '$(workspaces.config-files.path)/example.yaml']
+            workspaces:
+              - name: config-files
+                workspace: '$(setup-sample.workspaces.input-files)'
+
+          # This inline Task checks the results and can also check the state of the environment
+          - name: setup-sample
+            workspaces:
+              - name: input-files
+                workspace: '$(sample.workspaces.config-files)'
+            taskSpec:
+              params:
+                - name: output
+                  value: $(sample.results.output)
+              workspaces:
+                - name: input-files
+              steps:
+                - name: echo
+                  image: ubuntu
+                  script: |
+                    #!/usr/bin/env bash
+
+                    # TODO: assert something about the expected contents of $(params.output)
+                    # TODO: assert something about the expected results in the cluster `tkn` was run against

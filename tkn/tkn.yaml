@@ -12,6 +12,12 @@ spec:
       - name: ARGS
         type: array
         description: tkn CLI arguments to run
+    results:
+      - name: output
+        description: output from running the command as a single string
+    workspaces:
+      - name: config-files
+        description: if provided, location of files which can be used as input to `tkn`
   steps:
     - name: tkn
       image: "$(inputs.params.tkn-image)"
