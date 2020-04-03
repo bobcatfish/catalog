@@ -1,0 +1,97 @@
+apiVersion: tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: gcs-triggertemplate
+spec:
+  params:
+    - name: pvc-name
+    - name: gcs-bucket
+    - name: secret-name
+  resourceTemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        name: gcs-pr-$(uid)
+      spec:
+        workspaces:
+        - name: data
+          persistentVolumeClaim:
+            claimName: $(params.pvc-name)
+        - name: credentials
+          secret:
+            secretName: $(params.secret-name)
+        pipelineSpec:
+          workspaces:
+          - name: data
+          - name: credentials
+          tasks:
+          - name: gcs-input
+            taskRef:
+              name: gcs-input
+            workspaces:
+            - name: credentials
+              workspace: credentials
+            - name: output
+              workspace: data
+            params:
+            - name: name
+              value: $(uid)
+            - name: location
+              value: $(params.gcs-bucket)
+            - name: typeDir
+              value: "true"
+            - name: serviceAccountPath
+              value: catalog-test-gcs-account.json
+          - name: verify-data
+            runAfter: [gcs-input]
+            workspaces:
+            - name: data
+              workspace: data
+            taskSpec:
+              workspaces:
+              - name: data
+              steps:
+              - image: ubuntu
+                script: |
+                  #!/usr/bin/env bash
+                  set -xe
+                  echo $(workspaces.data.path)/$(uid)/cookies/recipe | grep chocolate
+---
+apiVersion: tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: gcs-binding
+spec:
+  params:
+    - name: pvc-name
+      value: gcs-test-storage
+    - name: gcs-bucket
+      value: gs://tekton-catalog-test-asdf
+    - name: secret-name
+      value: catalog-test-gcs
+---
+apiVersion: tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: gcs-listener
+spec:
+  serviceType: LoadBalancer
+  serviceAccountName: tekton-triggers-example-sa
+  triggers:
+  - name: gcs
+    bindings:
+    - name: gcs-binding
+    template:
+      name: gcs-triggertemplate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gcs-test-storage
+spec:
+  resources:
+    requests:
+      storage: 16Mi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
